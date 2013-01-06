@@ -20,7 +20,6 @@ package w1
 
 import (
 	crc16 "../crc16"
-	"fmt"
 	"os"
 	"errors"
 	"strings"
@@ -42,20 +41,15 @@ type Button struct {
 	file *os.File
 }
 
-// Status represents an iButton status
-type Status struct {
-
-}
-
 // Status returns the current iButton status
 func (b *Button) Status() (status *Status, err error) {
 
-	bytes, err := b.readMemory(0x0200, 2)
+	status = new(Status)
+
+	status.bytes, err = b.readMemory(0x0200, 2)
 	if err != nil {
 		return
 	}
-
-	fmt.Printf("status: %x\n", bytes)
 
 	return
 }

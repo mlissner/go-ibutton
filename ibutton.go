@@ -40,12 +40,12 @@ func main() {
 				fmt.Printf("could not open iButton (%v)\n", err)
 				os.Exit(1)
 			}
-			_, err = button.Status()
+			status, err := button.Status()
 			if err != nil {
 				fmt.Printf("could not get iButton status (%v)\n", err)
 				os.Exit(1)
 			}
-
+			fmt.Printf("time: %v\n", status.Time())
 			button.Close()
 		case "help":
 			flag.Usage()
