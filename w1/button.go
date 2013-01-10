@@ -23,6 +23,7 @@ import (
 	"os"
 	"errors"
 	"strings"
+	"time"
 )
 
 // iButton command codes
@@ -40,6 +41,15 @@ const W1_DIR = "/sys/bus/w1/devices"
 type Button struct {
 	file *os.File
 }
+
+// Sample represents a mission log sample
+type Sample struct {
+	Time time.Time
+	Temp Temperature
+}
+
+// Temperature represents a temperature
+type Temperature float32
 
 // Status returns the current iButton status
 func (b *Button) Status() (status *Status, err error) {
@@ -102,10 +112,63 @@ func (b *Button) Close() (err error) {
 // reset send a reset command to the 1-Wire bus
 func (b *Button) reset() (err error) {
 
+	// send empty write to reset
 	data := make([]byte, 0)
 	_, err = b.file.Write(data)
 
 	return err
+}
+
+// ReadLog returns the log entries for the current mission
+func (b *Button) ReadLog() (samples []Sample, err error) {
+
+	// aquire button status
+	status, err := b.Status()
+	if err != nil {
+		return
+	}
+
+	// make array with sample count length
+	samples = make([]Sample, status.SampleCount())
+
+	// determine temperature sample size
+	var sampleBytes uint32
+	if status.HighResolution() {
+		sampleBytes = 2
+	} else {
+		sampleBytes = 1
+	}
+
+	// determine page count
+	byteCount := status.SampleCount() * sampleBytes
+	pages := int(byteCount / 32)
+	if (byteCount % 32 != 0) {
+		pages += 1
+	}
+
+	// read pages from device memory
+	bytes, err := b.readMemory(0x1000, pages)
+	if err != nil {
+		return
+	}
+
+	// parse temperatures
+	for index := uint32(0); index < status.SampleCount(); index++ {
+
+		samples[index].Time = status.MissionTimestamp().Add(status.SampleRate() * time.Duration(index))
+
+		temperatureBytes := bytes[index*sampleBytes:(index+1)*sampleBytes]
+
+		switch sampleBytes {
+			case 1:
+				samples[index].Temp = Temperature(float32(temperatureBytes[0]) / 2 - status.temperatureOffset())
+			case 2:
+				samples[index].Temp = Temperature(float32(temperatureBytes[0]) / 2 - status.temperatureOffset() + float32(temperatureBytes[1]) / 512)
+		}
+
+	}
+
+	return
 }
 
 // ReadMemory reads the iButton's memory starting with the given address
@@ -151,6 +214,9 @@ func (b *Button) readMemory(address uint16, pages int) (bytes []byte, err error)
 		}
 		bytes = append(bytes, data[:32]...)
 	}
+
+	// tell the device to stop sending data
+	b.reset()
 
 	return
 }

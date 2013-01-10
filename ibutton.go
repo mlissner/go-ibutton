@@ -36,6 +36,7 @@ func main() {
 		case "status":
 			button := new(w1.Button)
 			err := button.Open()
+			defer button.Close()
 			if err != nil {
 				fmt.Printf("could not open iButton (%v)\n", err)
 				os.Exit(1)
@@ -45,8 +46,23 @@ func main() {
 				fmt.Printf("could not get iButton status (%v)\n", err)
 				os.Exit(1)
 			}
-			fmt.Printf("time: %v\n", status.Time())
-			button.Close()
+			fmt.Printf("time:       %v\n", status.Time())
+			fmt.Printf("model:      %v\n", status.Model())
+			fmt.Printf("timestamp:  %v\n", status.MissionTimestamp())
+			fmt.Printf("count:      %v\n", status.SampleCount())
+			fmt.Printf("running:    %v\n", status.MissionInProgress())
+			fmt.Printf("resolution: %v\n", func() string { if status.HighResolution() { return "0.0625°C" }; return "0.5°C" }())
+			fmt.Printf("rate:       %v\n", status.SampleRate())
+		case "read":
+			button := new(w1.Button)
+			err := button.Open()
+			defer button.Close()
+			samples, err := button.ReadLog()
+			if err != nil {
+				fmt.Printf("could not read log (%v)\n", err)
+				os.Exit(1)
+			}
+			fmt.Printf("log: %v\n", samples)
 		case "help":
 			flag.Usage()
 			os.Exit(2)
