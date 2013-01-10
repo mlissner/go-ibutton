@@ -19,53 +19,57 @@ package main
 
 import (
 	w1 "./w1"
-	"fmt"
 	"flag"
+	"fmt"
 	"os"
 )
 
 // parse arguments
 var command = flag.String("command", "help", "displays general help")
 
-
 func main() {
 
 	flag.Parse()
 
 	switch *command {
-		case "status":
-			button := new(w1.Button)
-			err := button.Open()
-			defer button.Close()
-			if err != nil {
-				fmt.Printf("could not open iButton (%v)\n", err)
-				os.Exit(1)
+	case "status":
+		button := new(w1.Button)
+		err := button.Open()
+		defer button.Close()
+		if err != nil {
+			fmt.Printf("could not open iButton (%v)\n", err)
+			os.Exit(1)
+		}
+		status, err := button.Status()
+		if err != nil {
+			fmt.Printf("could not get iButton status (%v)\n", err)
+			os.Exit(1)
+		}
+		fmt.Printf("time:       %v\n", status.Time())
+		fmt.Printf("model:      %v\n", status.Model())
+		fmt.Printf("timestamp:  %v\n", status.MissionTimestamp())
+		fmt.Printf("count:      %v\n", status.SampleCount())
+		fmt.Printf("running:    %v\n", status.MissionInProgress())
+		fmt.Printf("resolution: %v\n", func() string {
+			if status.HighResolution() {
+				return "0.0625°C"
 			}
-			status, err := button.Status()
-			if err != nil {
-				fmt.Printf("could not get iButton status (%v)\n", err)
-				os.Exit(1)
-			}
-			fmt.Printf("time:       %v\n", status.Time())
-			fmt.Printf("model:      %v\n", status.Model())
-			fmt.Printf("timestamp:  %v\n", status.MissionTimestamp())
-			fmt.Printf("count:      %v\n", status.SampleCount())
-			fmt.Printf("running:    %v\n", status.MissionInProgress())
-			fmt.Printf("resolution: %v\n", func() string { if status.HighResolution() { return "0.0625°C" }; return "0.5°C" }())
-			fmt.Printf("rate:       %v\n", status.SampleRate())
-		case "read":
-			button := new(w1.Button)
-			err := button.Open()
-			defer button.Close()
-			samples, err := button.ReadLog()
-			if err != nil {
-				fmt.Printf("could not read log (%v)\n", err)
-				os.Exit(1)
-			}
-			fmt.Printf("log: %v\n", samples)
-		case "help":
-			flag.Usage()
-			os.Exit(2)
+			return "0.5°C"
+		}())
+		fmt.Printf("rate:       %v\n", status.SampleRate())
+	case "read":
+		button := new(w1.Button)
+		err := button.Open()
+		defer button.Close()
+		samples, err := button.ReadLog()
+		if err != nil {
+			fmt.Printf("could not read log (%v)\n", err)
+			os.Exit(1)
+		}
+		fmt.Printf("log: %v\n", samples)
+	case "help":
+		flag.Usage()
+		os.Exit(2)
 	}
 
 }

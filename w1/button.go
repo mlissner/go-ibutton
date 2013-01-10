@@ -20,8 +20,8 @@ package w1
 
 import (
 	crc16 "../crc16"
-	"os"
 	"errors"
+	"os"
 	"strings"
 	"time"
 )
@@ -33,6 +33,31 @@ const (
 	READ_MEMORY      = 0x69
 	CLEAR_MEMORY     = 0x96
 )
+
+// device identifiers type
+type deviceId int
+
+// device identifier byte descriptors
+const (
+	DS2422  deviceId = 0x00
+	DS1923           = 0x20
+	DS1922L          = 0x40
+	DS1922T          = 0x60
+	DS1922E          = 0x80
+)
+
+// device specific data
+var devices = map[deviceId]struct {
+	description string
+	offset      float32
+	supported   bool
+}{
+	DS2422:  {"DS2422", 0.0, false},
+	DS1923:  {"DS1923", 0.0, false},
+	DS1922L: {"DS1922L", -41.0, true},
+	DS1922T: {"DS1922T", -1.0, true},
+	DS1922E: {"DS1922E", 0.0, false},
+}
 
 // 1-Wire device path
 const W1_DIR = "/sys/bus/w1/devices"
@@ -75,7 +100,7 @@ func (b *Button) Open() (err error) {
 
 	// get devices directory contents
 	infos, err := dir.Readdir(0)
-		if err != nil {
+	if err != nil {
 		return
 	}
 
@@ -94,7 +119,7 @@ func (b *Button) Open() (err error) {
 		return errors.New("No iButton found.")
 	}
 
-	b.file, err = os.OpenFile(W1_DIR + "/" + buttonInfo.Name() + "/rw", os.O_RDWR, 0666)
+	b.file, err = os.OpenFile(W1_DIR+"/"+buttonInfo.Name()+"/rw", os.O_RDWR, 0666)
 
 	return err
 }
@@ -142,7 +167,7 @@ func (b *Button) ReadLog() (samples []Sample, err error) {
 	// determine page count
 	byteCount := status.SampleCount() * sampleBytes
 	pages := int(byteCount / 32)
-	if (byteCount % 32 != 0) {
+	if byteCount%32 != 0 {
 		pages += 1
 	}
 
@@ -157,13 +182,13 @@ func (b *Button) ReadLog() (samples []Sample, err error) {
 
 		samples[index].Time = status.MissionTimestamp().Add(status.SampleRate() * time.Duration(index))
 
-		temperatureBytes := bytes[index*sampleBytes:(index+1)*sampleBytes]
+		temperatureBytes := bytes[index*sampleBytes : (index+1)*sampleBytes]
 
 		switch sampleBytes {
-			case 1:
-				samples[index].Temp = Temperature(float32(temperatureBytes[0]) / 2 - status.temperatureOffset())
-			case 2:
-				samples[index].Temp = Temperature(float32(temperatureBytes[0]) / 2 - status.temperatureOffset() + float32(temperatureBytes[1]) / 512)
+		case 1:
+			samples[index].Temp = Temperature(float32(temperatureBytes[0])/2 + devices[status.Model()].offset)
+		case 2:
+			samples[index].Temp = Temperature(float32(temperatureBytes[0])/2 + devices[status.Model()].offset + float32(temperatureBytes[1])/512)
 		}
 
 	}
