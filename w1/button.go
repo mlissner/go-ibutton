@@ -48,9 +48,9 @@ const (
 
 // device specific data
 var devices = map[deviceId]struct {
-	description string
-	offset      float32
-	supported   bool
+	name      string
+	offset    float32
+	supported bool
 }{
 	DS2422:  {"DS2422", 0.0, false},
 	DS1923:  {"DS1923", 0.0, false},
@@ -186,9 +186,9 @@ func (b *Button) ReadLog() (samples []Sample, err error) {
 
 		switch sampleBytes {
 		case 1:
-			samples[index].Temp = Temperature(float32(temperatureBytes[0])/2 + devices[status.Model()].offset)
+			samples[index].Temp = Temperature(float32(temperatureBytes[0])/2 + devices[status.DeviceId()].offset)
 		case 2:
-			samples[index].Temp = Temperature(float32(temperatureBytes[0])/2 + devices[status.Model()].offset + float32(temperatureBytes[1])/512)
+			samples[index].Temp = Temperature(float32(temperatureBytes[0])/2 + devices[status.DeviceId()].offset + float32(temperatureBytes[1])/512)
 		}
 
 	}

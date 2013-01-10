@@ -1,6 +1,7 @@
 package w1
 
 import (
+	"fmt"
 	"time"
 )
 
@@ -70,8 +71,19 @@ func (s *Status) SampleRate() (duration time.Duration) {
 	return
 }
 
-// Model the device identifier
-func (s *Status) Model() (model deviceId) {
+// DeviceId the device identifier byte
+func (s *Status) DeviceId() (model deviceId) {
 
 	return deviceId(s.bytes[0x26])
+}
+
+// Name the device model's name
+func (s *Status) Name() string {
+
+	device, ok := devices[s.DeviceId()]
+	if ok {
+		return device.name
+	}
+
+	return fmt.Sprintf("Unknown Device (deviceId:%x)", s.DeviceId())
 }

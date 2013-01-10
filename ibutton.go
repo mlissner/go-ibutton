@@ -46,7 +46,7 @@ func main() {
 			os.Exit(1)
 		}
 		fmt.Printf("time:       %v\n", status.Time())
-		fmt.Printf("model:      %v\n", status.Model())
+		fmt.Printf("model:      %v\n", status.Name())
 		fmt.Printf("timestamp:  %v\n", status.MissionTimestamp())
 		fmt.Printf("count:      %v\n", status.SampleCount())
 		fmt.Printf("running:    %v\n", status.MissionInProgress())
