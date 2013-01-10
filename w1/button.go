@@ -51,12 +51,13 @@ var devices = map[deviceId]struct {
 	name      string
 	offset    float32
 	supported bool
+	tr1       Temperature
 }{
-	DS2422:  {"DS2422", 0.0, false},
-	DS1923:  {"DS1923", 0.0, false},
-	DS1922L: {"DS1922L", -41.0, true},
-	DS1922T: {"DS1922T", -1.0, true},
-	DS1922E: {"DS1922E", 0.0, false},
+	DS2422:  {"DS2422", 0.0, false, 0.0},
+	DS1923:  {"DS1923", 0.0, false, 0.0},
+	DS1922L: {"DS1922L", -41.0, true, 60.0},
+	DS1922T: {"DS1922T", -1.0, true, 90.0},
+	DS1922E: {"DS1922E", 0.0, false, 0.0},
 }
 
 // 1-Wire device path
@@ -81,7 +82,7 @@ func (b *Button) Status() (status *Status, err error) {
 
 	status = new(Status)
 
-	status.bytes, err = b.readMemory(0x0200, 2)
+	status.bytes, err = b.readMemory(0x0200, 3)
 	if err != nil {
 		return
 	}
@@ -177,6 +178,9 @@ func (b *Button) ReadLog() (samples []Sample, err error) {
 		return
 	}
 
+	// get temperature correction factors
+	A, B, C := status.correctionFactors()
+
 	// parse temperatures
 	for index := uint32(0); index < status.SampleCount(); index++ {
 
@@ -184,12 +188,8 @@ func (b *Button) ReadLog() (samples []Sample, err error) {
 
 		temperatureBytes := bytes[index*sampleBytes : (index+1)*sampleBytes]
 
-		switch sampleBytes {
-		case 1:
-			samples[index].Temp = Temperature(float32(temperatureBytes[0])/2 + devices[status.DeviceId()].offset)
-		case 2:
-			samples[index].Temp = Temperature(float32(temperatureBytes[0])/2 + devices[status.DeviceId()].offset + float32(temperatureBytes[1])/512)
-		}
+		tc := status.decodeTemp(temperatureBytes)
+		samples[index].Temp = tc - (A*tc*tc + B*tc + C)
 
 	}
 

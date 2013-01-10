@@ -24,6 +24,19 @@ func (s *Status) MissionTimestamp() time.Time {
 
 }
 
+// decodeTemp gives the temperature encoded in the given byte slice
+func (s *Status) decodeTemp(bytes []byte) (temp Temperature) {
+
+	switch len(bytes) {
+	case 1:
+		temp = Temperature(float32(bytes[0])/2 + devices[s.DeviceId()].offset)
+	case 2:
+		temp = Temperature(float32(bytes[0])/2 + devices[s.DeviceId()].offset + float32(bytes[1])/512)
+	}
+
+	return
+}
+
 // parseTime parses a time object from the given bytes
 func parseTime(bytes []byte) time.Time {
 
@@ -75,6 +88,29 @@ func (s *Status) SampleRate() (duration time.Duration) {
 func (s *Status) DeviceId() (model deviceId) {
 
 	return deviceId(s.bytes[0x26])
+}
+
+// correctionFactors returns the temperature correction factors for this device
+func (s *Status) correctionFactors() (a Temperature, b Temperature, c Temperature) {
+
+	// get chip-hardcoded correction values
+	tr1 := devices[s.DeviceId()].tr1
+	tr2 := s.decodeTemp(s.bytes[0x40:0x42])
+	tc2 := s.decodeTemp(s.bytes[0x42:0x44])
+	tr3 := s.decodeTemp(s.bytes[0x44:0x46])
+	tc3 := s.decodeTemp(s.bytes[0x46:0x48])
+
+	// calculate correction factors
+	err2 := tc2 - tr2
+	err3 := tc3 - tr3
+	err1 := err2
+
+	// formula stuff from DS1922L data sheet (p.50)
+	b = (tr2*tr2 - tr1*tr1) * (err3 - err1) / ((tr2*tr2-tr1*tr1)*(tr3-tr1) + (tr3*tr3-tr1*tr1)*(tr1-tr2))
+	a = b * (tr1 - tr2) / (tr2*tr2 - tr1*tr1)
+	c = err1 - a*tr1*tr1 - b*tr1
+
+	return
 }
 
 // Name the device model's name
