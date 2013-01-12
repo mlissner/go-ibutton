@@ -19,7 +19,7 @@
 package w1
 
 import (
-	crc16 "../crc16"
+	"github.com/maxhille/go-ibutton/crc16"
 	"errors"
 	"os"
 	"strings"

@@ -18,7 +18,7 @@
 package main
 
 import (
-	w1 "./w1"
+	"github.com/maxhille/go-ibutton/w1"
 	"flag"
 	"fmt"
 	"os"
