@@ -18,9 +18,9 @@
 package main
 
 import (
-	"github.com/maxhille/go-ibutton/w1"
 	"flag"
 	"fmt"
+	"github.com/maxhille/go-ibutton/w1"
 	"os"
 )
 
@@ -67,6 +67,16 @@ func main() {
 			os.Exit(1)
 		}
 		fmt.Printf("log: %v\n", samples)
+	case "stop":
+		button := new(w1.Button)
+		err := button.Open()
+		defer button.Close()
+		err = button.StopMission()
+		if err != nil {
+			fmt.Printf("could not stop mission (%v)\n", err)
+			os.Exit(1)
+		}
+		fmt.Printf("Stopped mission.\n")
 	case "help":
 		flag.Usage()
 		os.Exit(2)

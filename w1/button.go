@@ -19,8 +19,8 @@
 package w1
 
 import (
-	"github.com/maxhille/go-ibutton/crc16"
 	"errors"
+	"github.com/maxhille/go-ibutton/crc16"
 	"os"
 	"strings"
 	"time"
@@ -32,6 +32,7 @@ const (
 	READ_SCRATCHPAD  = 0xAA
 	READ_MEMORY      = 0x69
 	CLEAR_MEMORY     = 0x96
+	STOP_MISSION     = 0x33
 )
 
 // device identifiers type
@@ -140,6 +141,18 @@ func (b *Button) reset() (err error) {
 
 	// send empty write to reset
 	data := make([]byte, 0)
+	_, err = b.file.Write(data)
+
+	return err
+}
+
+// StopMission stops the currently running mission
+func (b *Button) StopMission() (err error) {
+
+	// send empty write to reset
+	data := make([]byte, 10)
+	data[0] = STOP_MISSION
+	data[9] = 0xFF
 	_, err = b.file.Write(data)
 
 	return err
