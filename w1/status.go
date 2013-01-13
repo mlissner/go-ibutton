@@ -59,13 +59,13 @@ func (s *Status) SampleCount() uint32 {
 // MissionInProgress true if a mission is running
 func (s *Status) MissionInProgress() bool {
 
-	return s.bytes[0x15]&0x01 > 0
+	return s.bytes[0x15]&(0x01<<1) > 0
 }
 
 // HighResolution true if the chip is in 16bit (0.0625°C) mode
 func (s *Status) HighResolution() bool {
 
-	return s.bytes[0x13]&0x02 > 0
+	return s.bytes[0x13]&(0x01<<2) > 0
 }
 
 // SampleRate return the currently set sample rate
