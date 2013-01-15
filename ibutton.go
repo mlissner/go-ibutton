@@ -61,16 +61,26 @@ func main() {
 		button := new(w1.Button)
 		err := button.Open()
 		defer button.Close()
+		if err != nil {
+			fmt.Printf("could not open button (%v)\n", err)
+			os.Exit(1)
+		}
 		samples, err := button.ReadLog()
 		if err != nil {
 			fmt.Printf("could not read log (%v)\n", err)
 			os.Exit(1)
 		}
-		fmt.Printf("log: %v\n", samples)
+		for _, sample := range samples {
+			fmt.Printf("%v\t%3.3f°C\n", sample.Time, sample.Temp)
+		}
 	case "stop":
 		button := new(w1.Button)
 		err := button.Open()
 		defer button.Close()
+		if err != nil {
+			fmt.Printf("could not open button (%v)\n", err)
+			os.Exit(1)
+		}
 		err = button.StopMission()
 		if err != nil {
 			fmt.Printf("could not stop mission (%v)\n", err)
