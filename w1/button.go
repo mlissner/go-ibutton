@@ -23,16 +23,19 @@ import (
 	"github.com/maxhille/go-ibutton/crc16"
 	"os"
 	"strings"
+	"strconv"
 	"time"
 )
 
 // iButton command codes
 const (
 	WRITE_SCRATCHPAD = 0x0F
+	COPY_SCRATCHPAD  = 0x99
 	READ_SCRATCHPAD  = 0xAA
 	READ_MEMORY      = 0x69
 	CLEAR_MEMORY     = 0x96
 	STOP_MISSION     = 0x33
+	START_MISSION    = 0xCC
 )
 
 // device identifiers type
@@ -149,7 +152,6 @@ func (b *Button) reset() (err error) {
 // StopMission stops the currently running mission
 func (b *Button) StopMission() (err error) {
 
-	// send empty write to reset
 	data := make([]byte, 10)
 	data[0] = STOP_MISSION
 	data[9] = 0xFF
@@ -161,13 +163,124 @@ func (b *Button) StopMission() (err error) {
 // ClearMemory clears the ibutton memory
 func (b *Button) ClearMemory() (err error) {
 
-	// send empty write to reset
 	data := make([]byte, 10)
 	data[0] = CLEAR_MEMORY
 	data[9] = 0xFF
 	_, err = b.file.Write(data)
 
 	return err
+}
+
+// StartMission starts a mission
+func (b *Button) StartMission() (err error) {
+
+	data := make([]byte, 10)
+	data[0] = START_MISSION
+	data[9] = 0xFF
+	_, err = b.file.Write(data)
+
+	return err
+}
+
+// CopyScratchmap copies the scratchpad
+func (b *Button) CopyScratchpad() (err error) {
+
+	data := make([]byte, 12)
+	data[0] = COPY_SCRATCHPAD
+	data[1] = 0x00
+	data[2] = 0x02
+	data[3] = 0x1F
+	_, err = b.file.Write(data)
+
+	return err
+}
+
+// WriteScratchpad writes the button scrathpad
+func (b *Button) WriteScratchpad() (err error) {
+
+	data := make([]byte, 35)
+
+	// command
+	data[0] = WRITE_SCRATCHPAD
+
+	// target address (scratchpad)
+	data[1] = 0x00
+	data[2] = 0x02
+
+	// time and date (01.04.2013 15:30:00)
+	// strange format, so: 30 -> "30" -> 0x30
+	now := time.Now()
+	second, _ := strconv.ParseInt(strconv.Itoa(now.Second()),16,8)
+	minute, _ := strconv.ParseInt(strconv.Itoa(now.Minute()),16,8)
+	hour, _ := strconv.ParseInt(strconv.Itoa(now.Hour()),16,8)
+	data[3] = byte(second)
+	data[4] = byte(minute)
+	data[5] = byte(hour)
+	data[6] = byte(now.Day())
+	data[7] = byte(now.Month())
+	data[8] = byte(now.Year() % 100)
+
+	// sample rate (10mins with EHSS=0)
+	data[ 9] = 0x0A
+	data[10] = 0x00
+
+	// alarm thresholds
+	data[11] = 0x52
+	data[12] = 0x99
+
+	// alarm control (both disabled = 0)
+	data[19] = 0x00
+
+	// "Disabled" - registers is R/W but should be 0xfc
+	data[20] = 0xFC
+
+	// EHSS=0 (low sample rate), EOSC=1 (oscillator running)
+	data[21] = 0x01
+
+	// no alarm, no rollover, 16 bit, logging on
+	data[22] = 0xC5
+
+	// no mission start delay
+	data[25] = 0x00
+	data[26] = 0x00
+	data[27] = 0x00
+
+	// "write through the end of the scratchpad"
+	data[28] = 0xFF
+	data[29] = 0xFF
+	data[30] = 0xFF
+	data[31] = 0xFF
+	data[32] = 0xFF
+	data[33] = 0xFF
+	data[34] = 0xFF
+
+	_, err = b.file.Write(data)
+
+	return err
+}
+
+// ReadScratchpad reads the button scrathpad
+func (b *Button) ReadScratchpad() (data []byte, err error) {
+
+	// send the read scratchpad command
+	cmd := make([]byte, 1)
+	cmd[0] = READ_SCRATCHPAD
+	_, err = b.file.Write(cmd)
+	if err != nil {
+		return
+	}
+
+	// read the initial package which has special parsing
+	data = make([]byte, 35)
+	_, err = b.file.Read(data)
+	if err != nil {
+		return
+	}
+
+	// tell the device to stop sending data
+	b.reset()
+
+	return
 }
 
 // ReadLog returns the log entries for the current mission

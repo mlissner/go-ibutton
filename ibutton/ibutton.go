@@ -73,6 +73,40 @@ func main() {
 			os.Exit(1)
 		}
 		fmt.Printf("Cleared Memory.\n")
+	case "start":
+		button := new(w1.Button)
+		err := button.Open()
+		defer button.Close()
+		if err != nil {
+			fmt.Printf("could not open button (%v)\n", err)
+			os.Exit(1)
+		}
+		err = button.WriteScratchpad()
+		if err != nil {
+			fmt.Printf("could not write scratchpad (%v)\n", err)
+			os.Exit(1)
+		}
+		data, err := button.ReadScratchpad()
+		if err != nil {
+			fmt.Printf("could not read scratchpad (%v)\n", err)
+
+		}
+		// verify transfer status register
+		if data[2] != byte(0x1F) {
+			fmt.Printf("scratchpad verification failed (%v)\n", data)
+			os.Exit(1)
+		}
+		err = button.CopyScratchpad()
+		if err != nil {
+			fmt.Printf("could not copy scratchpad (%v)\n", err)
+			os.Exit(1)
+		}
+		err = button.StartMission()
+		if err != nil {
+			fmt.Printf("could not start mission (%v)\n", err)
+			os.Exit(1)
+		}
+		fmt.Printf("Started mission.\n")
 	case "read":
 		button := new(w1.Button)
 		err := button.Open()
