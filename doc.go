@@ -19,9 +19,11 @@
 
 ibutton provides access to Maxim iButton devices
 
-	ibutton start
-	ibutton stop
-	ibutton read
+	ibutton -command start
+	ibutton -command stop
+	ibutton -command read
+	ibutton -command status
+	ibutton -command clear
 
 */
 package documentation
