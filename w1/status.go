@@ -84,6 +84,13 @@ func (s *Status) SampleRate() (duration time.Duration) {
 	return
 }
 
+// MemoryCleared true when the memory has been successfully cleared (MEMCLR==1)
+func (s *Status) MemoryCleared() bool {
+
+	return s.bytes[0x15]&(0x01<<3) > 0
+}
+
+
 // DeviceId the device identifier byte
 func (s *Status) DeviceId() (model deviceId) {
 

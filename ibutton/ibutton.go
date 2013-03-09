@@ -46,18 +46,19 @@ func main() {
 			fmt.Printf("could not get iButton status (%v)\n", err)
 			os.Exit(1)
 		}
-		fmt.Printf("time:       %v\n", status.Time())
-		fmt.Printf("model:      %v\n", status.Name())
-		fmt.Printf("timestamp:  %v\n", status.MissionTimestamp())
-		fmt.Printf("count:      %v\n", status.SampleCount())
-		fmt.Printf("running:    %v\n", status.MissionInProgress())
-		fmt.Printf("resolution: %v\n", func() string {
+		fmt.Printf("time:           %v\n", status.Time())
+		fmt.Printf("model:          %v\n", status.Name())
+		fmt.Printf("timestamp:      %v\n", status.MissionTimestamp())
+		fmt.Printf("count:          %v\n", status.SampleCount())
+		fmt.Printf("running:        %v\n", status.MissionInProgress())
+		fmt.Printf("memory cleared: %v\n", status.MemoryCleared())
+		fmt.Printf("resolution:     %v\n", func() string {
 			if status.HighResolution() {
 				return "0.0625°C"
 			}
 			return "0.5°C"
 		}())
-		fmt.Printf("rate:       %v\n", status.SampleRate())
+		fmt.Printf("rate:           %v\n", status.SampleRate())
 	case "clear":
 		button := new(w1.Button)
 		err := button.Open()
