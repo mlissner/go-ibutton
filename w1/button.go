@@ -158,6 +158,18 @@ func (b *Button) StopMission() (err error) {
 	return err
 }
 
+// ClearMemory clears the ibutton memory
+func (b *Button) ClearMemory() (err error) {
+
+	// send empty write to reset
+	data := make([]byte, 10)
+	data[0] = CLEAR_MEMORY
+	data[9] = 0xFF
+	_, err = b.file.Write(data)
+
+	return err
+}
+
 // ReadLog returns the log entries for the current mission
 func (b *Button) ReadLog() (samples []Sample, err error) {
 

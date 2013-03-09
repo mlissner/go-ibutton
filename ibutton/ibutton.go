@@ -58,6 +58,20 @@ func main() {
 			return "0.5°C"
 		}())
 		fmt.Printf("rate:       %v\n", status.SampleRate())
+	case "clear":
+		button := new(w1.Button)
+		err := button.Open()
+		defer button.Close()
+		if err != nil {
+			fmt.Printf("could not open button (%v)\n", err)
+			os.Exit(1)
+		}
+		err = button.ClearMemory()
+		if err != nil {
+			fmt.Printf("could not clear memory (%v)\n", err)
+			os.Exit(1)
+		}
+		fmt.Printf("Cleared Memory.\n")
 	case "read":
 		button := new(w1.Button)
 		err := button.Open()
