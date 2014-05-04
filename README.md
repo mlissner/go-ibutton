@@ -7,7 +7,7 @@ Go application to use Maxim iButtons
 
 Go package management can install ibutton directly from github:
 ```
-go install github.com/maxhille/go-ibutton/ibutton
+go get github.com/maxhille/go-ibutton/ibutton
 ```
 
 # usage
